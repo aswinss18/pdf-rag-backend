@@ -18,6 +18,10 @@ class Settings:
     upload_dir: str = os.getenv("UPLOAD_DIR", "uploaded/")
     cache_dir: str = os.getenv("CACHE_DIR", "cache/")
     persistence_dir: str = os.getenv("PERSISTENCE_DIR", "persistence/")
+    sqlite_db_path: str = os.getenv("SQLITE_DB_PATH", "persistence/app.db")
+    jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "change-me-in-production")
+    jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
+    access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
     allowed_origins: list = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
@@ -31,6 +35,7 @@ class Settings:
         os.makedirs(self.upload_dir, exist_ok=True)
         os.makedirs(self.cache_dir, exist_ok=True)
         os.makedirs(self.persistence_dir, exist_ok=True)
+        os.makedirs(os.path.dirname(self.sqlite_db_path) or ".", exist_ok=True)
 
 
 settings = Settings()

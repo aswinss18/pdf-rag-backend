@@ -15,24 +15,24 @@ from app.services.internals.rag_pipeline import (
 logger = logging.getLogger(__name__)
 
 
-def process_document(file_path: str) -> None:
+def process_document(user_id: int, file_path: str) -> None:
     """Process a PDF and store its embeddings."""
     logger.info(f"RAG service: processing document {file_path}")
-    process_pdf(file_path)
+    process_pdf(user_id, file_path)
 
 
-def query(question: str) -> str:
+def query(user_id: int, question: str) -> str:
     """Run a synchronous RAG query and return the answer string."""
     logger.info(f"RAG service: querying — {question[:60]}")
-    return ask_question(question)
+    return ask_question(user_id, question)
 
 
-async def query_stream_async(question: str):
+async def query_stream_async(user_id: int, question: str):
     """Async streaming RAG query (yields text chunks)."""
-    async for chunk in ask_question_stream(question):
+    async for chunk in ask_question_stream(user_id, question):
         yield chunk
 
 
-def query_stream_with_sources(question: str):
+def query_stream_with_sources(user_id: int, question: str):
     """Streaming RAG query with source metadata (yields dicts)."""
-    return ask_question_stream_with_sources(question)
+    return ask_question_stream_with_sources(user_id, question)

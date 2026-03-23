@@ -16,38 +16,39 @@ from app.services.internals.memory import (
 logger = logging.getLogger(__name__)
 
 
-def get_stats() -> Dict[str, Any]:
+def get_stats(user_id: int) -> Dict[str, Any]:
     """Return current memory statistics."""
-    return get_memory_stats()
+    return get_memory_stats(user_id)
 
 
-def clear_chat() -> None:
+def clear_chat(user_id: int) -> None:
     """Clear short-term chat history."""
-    clear_chat_history()
+    clear_chat_history(user_id)
 
 
-def clear_all() -> None:
+def clear_all(user_id: int) -> None:
     """Clear all memory (long-term + chat history)."""
-    clear_all_memory()
+    clear_all_memory(user_id)
 
 
-def cleanup(days: int = 30) -> Dict[str, Any]:
+def cleanup(user_id: int, days: int = 30) -> Dict[str, Any]:
     """Remove memories older than `days` and apply decay to aging ones."""
-    return agent_memory.cleanup_old_memories(days)
+    return agent_memory.cleanup_old_memories(user_id, days)
 
 
-def apply_decay() -> Dict[str, Any]:
+def apply_decay(user_id: int) -> Dict[str, Any]:
     """Apply memory decay without removing memories (keeps last 365 days)."""
-    return agent_memory.cleanup_old_memories(days_to_keep=365)
+    return agent_memory.cleanup_old_memories(user_id, days_to_keep=365)
 
 
-def detailed_info() -> Dict[str, Any]:
+def detailed_info(user_id: int) -> Dict[str, Any]:
     """Return detailed memory info including recent memory samples."""
-    stats = get_stats()
+    stats = get_stats(user_id)
     recent_memories = []
-    if len(agent_memory.memory_store) > 0:
+    state = agent_memory._get_state(user_id)
+    if len(state.memory_store) > 0:
         sorted_memories = sorted(
-            agent_memory.memory_store,
+            state.memory_store,
             key=lambda x: x.get("timestamp", 0),
             reverse=True,
         )
@@ -64,8 +65,8 @@ def detailed_info() -> Dict[str, Any]:
                 }
             )
     system_health = {
-        "total_memories": len(agent_memory.memory_store),
-        "index_size": agent_memory.memory_index.ntotal if agent_memory.memory_index else 0,
+        "total_memories": len(state.memory_store),
+        "index_size": state.memory_index.ntotal if state.memory_index else 0,
         "average_quality": stats.get("average_importance", 0),
         "system_status": "healthy" if stats.get("scoring_system") == "advanced_ranking_enabled" else "degraded",
     }

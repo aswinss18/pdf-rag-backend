@@ -5,8 +5,9 @@ Moved from core/tools.py. Imports updated to app package paths.
 
 import logging
 from typing import Dict, Any
+from app.core.auth import get_current_user_id
 from app.services.internals.rag_pipeline import ask_question as rag_search
-from app.db.vector_store import documents
+from app.db.vector_store import get_documents
 from app.services.internals.multi_document_context import (
     group_chunks_by_document,
     analyze_document_distribution,
@@ -40,6 +41,8 @@ def _summarize_documents(chunks):
 def search_documents(query: str) -> Dict[str, Any]:
     """Search through uploaded PDF documents using hybrid RAG pipeline."""
     try:
+        user_id = get_current_user_id()
+        documents = get_documents(user_id)
         if not documents:
             return {
                 "success": False,
@@ -47,7 +50,7 @@ def search_documents(query: str) -> Dict[str, Any]:
                 "answer": None,
                 "document_count": 0,
             }
-        answer = rag_search(query)
+        answer = rag_search(user_id, query)
         unique_docs = set(chunk.get("doc", "unknown") for chunk in documents)
         return {
             "success": True,
@@ -70,6 +73,8 @@ def search_documents(query: str) -> Dict[str, Any]:
 def list_available_documents() -> Dict[str, Any]:
     """List all currently loaded documents with their statistics."""
     try:
+        user_id = get_current_user_id()
+        documents = get_documents(user_id)
         if not documents:
             return {
                 "success": True,

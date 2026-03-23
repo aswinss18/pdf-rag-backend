@@ -9,7 +9,7 @@ import hashlib
 import json
 import time
 from app.services.internals.embeddings import get_embedding
-from app.db.vector_store import add_embeddings, search
+from app.db.vector_store import add_embeddings
 from app.services.internals.chunker import chunk_text
 from app.services.internals.pdf_loader import load_pdf
 from app.services.internals.reranker import rerank_chunks, compress_chunks, smart_context_selection
@@ -70,7 +70,7 @@ def load_from_cache(file_hash: str):
     return None, None
 
 
-def process_pdf(file_path: str):
+def process_pdf(user_id: int, file_path: str):
     """Process a PDF file and store embeddings in the vector store."""
     logger.info(f"Starting PDF processing for: {file_path}")
     try:
@@ -78,7 +78,7 @@ def process_pdf(file_path: str):
         cached_chunks, cached_embeddings = load_from_cache(file_hash)
         if cached_chunks and cached_embeddings:
             logger.info("Using cached data — skipping PDF processing")
-            add_embeddings(cached_chunks, cached_embeddings)
+            add_embeddings(user_id, cached_chunks, cached_embeddings)
             return
         logger.info("No cache found — processing PDF from scratch")
         pages_data = load_pdf(file_path)
@@ -88,18 +88,18 @@ def process_pdf(file_path: str):
             logger.info(f"Processing chunk {i + 1}/{len(chunks_with_metadata)}")
             embeddings.append(get_embedding(chunk_data["text"]))
         save_to_cache(file_hash, chunks_with_metadata, embeddings)
-        add_embeddings(chunks_with_metadata, embeddings)
+        add_embeddings(user_id, chunks_with_metadata, embeddings)
         logger.info("PDF processing completed successfully")
     except Exception as e:
         logger.error(f"Error processing PDF: {e}")
         raise
 
 
-def ask_question(question: str) -> str:
+def ask_question(user_id: int, question: str) -> str:
     """Optimised multi-document hybrid RAG pipeline (non-streaming)."""
     logger.info(f"Processing question with optimised hybrid pipeline: {question}")
     initial_chunks = hybrid_search(
-        query=question, vector_k=8, keyword_k=8, vector_weight=0.6, keyword_weight=0.4
+        user_id=user_id, query=question, vector_k=8, keyword_k=8, vector_weight=0.6, keyword_weight=0.4
     )
     if not initial_chunks:
         return "I don't have any documents to search through. Please upload a PDF first using the /upload endpoint."
@@ -117,9 +117,9 @@ def ask_question(question: str) -> str:
     return response.choices[0].message.content
 
 
-async def ask_question_stream(question: str):
+async def ask_question_stream(user_id: int, question: str):
     """Streaming RAG pipeline with hybrid retrieval and reranking."""
-    initial_chunks = hybrid_search(query=question, vector_k=8, keyword_k=8)
+    initial_chunks = hybrid_search(user_id=user_id, query=question, vector_k=8, keyword_k=8)
     if not initial_chunks:
         yield "I don't have any documents to search through. Please upload a PDF first."
         return
@@ -140,11 +140,11 @@ async def ask_question_stream(question: str):
             yield chunk.choices[0].delta.content
 
 
-def ask_question_stream_with_sources(question: str):
+def ask_question_stream_with_sources(user_id: int, question: str):
     """Multi-document hybrid RAG pipeline with cross-document analysis (streaming)."""
     start_time = time.time()
     initial_chunks = hybrid_search(
-        query=question, vector_k=10, keyword_k=10, vector_weight=0.6, keyword_weight=0.4
+        user_id=user_id, query=question, vector_k=10, keyword_k=10, vector_weight=0.6, keyword_weight=0.4
     )
     hybrid_stats = get_hybrid_search_stats(initial_chunks)
     if not initial_chunks:

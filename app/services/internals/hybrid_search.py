@@ -5,14 +5,14 @@ Moved from core/hybrid_search.py — imports updated.
 
 import logging
 from typing import List, Dict, Any
-from app.db.vector_store import search as vector_search
-from app.services.internals.keyword_search import keyword_search
+from app.db.vector_store import keyword_search, search as vector_search
 from app.services.internals.embeddings import get_embedding
 
 logger = logging.getLogger(__name__)
 
 
 def hybrid_search(
+    user_id: int,
     query: str,
     vector_k: int = 10,
     keyword_k: int = 10,
@@ -24,10 +24,10 @@ def hybrid_search(
 
     query_embedding = get_embedding(query)
 
-    vector_results = vector_search(query_embedding, k=vector_k)
+    vector_results = vector_search(user_id, query_embedding, k=vector_k)
     logger.info(f"Vector search returned {len(vector_results)} results")
 
-    keyword_results = keyword_search(query, k=keyword_k)
+    keyword_results = keyword_search(user_id, query, k=keyword_k)
     logger.info(f"Keyword search returned {len(keyword_results)} results")
 
     combined_results = {}

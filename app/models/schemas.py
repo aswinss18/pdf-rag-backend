@@ -32,6 +32,11 @@ class AgentRequest(BaseModel):
     )
 
 
+class AuthRequest(BaseModel):
+    username: str = Field(..., min_length=3, description="The username for login or registration")
+    password: str = Field(..., min_length=6, description="The account password")
+
+
 # ---------------------------------------------------------------------------
 # Upload
 # ---------------------------------------------------------------------------
@@ -40,6 +45,12 @@ class UploadResponse(StandardResponse):
     filename: str
     chunks_created: int = 0
     documents_loaded: int = 0
+
+
+class AuthResponse(StandardResponse):
+    access_token: str
+    token_type: str = "bearer"
+    username: str
 
 
 # ---------------------------------------------------------------------------

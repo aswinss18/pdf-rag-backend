@@ -7,6 +7,7 @@ import json
 import logging
 from typing import Dict, Any, List, Optional
 from openai import OpenAI
+from app.core.auth import set_current_user_context
 from app.tools.registry import execute_tool_from_registry, TOOLS_REGISTRY
 from app.tools.schemas import get_tool_schemas
 from app.services.internals.memory import (
@@ -33,18 +34,21 @@ class AIAgent:
 
     def run_agent_react(
         self,
+        user_id: int,
+        username: str,
         query: str,
         conversation_history: Optional[List[Dict[str, str]]] = None,
         max_steps: int = 5,
     ) -> Dict[str, Any]:
         """Run ReAct agent with optimised prompt architecture."""
         try:
-            raw_memory_context = get_memory_context(query)
+            set_current_user_context(user_id, username)
+            raw_memory_context = get_memory_context(user_id, query)
             memory_data = None
             user_profile = "General user"
 
             if raw_memory_context:
-                recent_memories = agent_memory.retrieve_memory(query, k=5)
+                recent_memories = agent_memory.retrieve_memory(user_id, query, k=5)
                 optimized_memories = optimize_memory(recent_memories, query)
                 memory_data = optimized_memories
                 if optimized_memories:
@@ -72,12 +76,12 @@ class AIAgent:
                     else conversation_history
                 )
                 messages.extend(limited_history)
-            else:
-                chat_history = get_chat_history(max_messages=4)
-                messages.extend(chat_history)
+                else:
+                    chat_history = get_chat_history(user_id, max_messages=4)
+                    messages.extend(chat_history)
 
             messages.append({"role": "user", "content": query})
-            add_to_chat_history("user", query)
+            add_to_chat_history(user_id, "user", query)
 
             tool_results = []
             reasoning_steps = []
@@ -134,13 +138,13 @@ class AIAgent:
                 )
                 final_answer = final_response.choices[0].message.content
 
-            add_to_chat_history("assistant", final_answer)
-            extract_and_store_facts(query, final_answer)
+            add_to_chat_history(user_id, "assistant", final_answer)
+            extract_and_store_facts(user_id, query, final_answer)
 
             memory_context_info = None
             if raw_memory_context and memory_data:
                 try:
-                    memory_stats = agent_memory.get_memory_stats()
+                    memory_stats = agent_memory.get_memory_stats(user_id)
                     memory_context_info = {
                         "memories_retrieved": len(memory_data),
                         "memories_used": [
@@ -199,18 +203,22 @@ class AIAgent:
 
     def run_agent(
         self,
+        user_id: int,
+        username: str,
         query: str,
         conversation_history: Optional[List[Dict[str, str]]] = None,
     ) -> Dict[str, Any]:
-        return self.run_agent_react(query, conversation_history)
+        return self.run_agent_react(user_id, username, query, conversation_history)
 
     def run_agent_stream(
         self,
+        user_id: int,
+        username: str,
         query: str,
         conversation_history: Optional[List[Dict[str, str]]] = None,
     ):
         try:
-            result = self.run_agent_react(query, conversation_history)
+            result = self.run_agent_react(user_id, username, query, conversation_history)
             if result["success"]:
                 answer = result["answer"]
                 yield {
@@ -243,12 +251,18 @@ agent = AIAgent()
 
 
 def run_agent(
-    query: str, conversation_history: Optional[List[Dict[str, str]]] = None
+    user_id: int,
+    username: str,
+    query: str,
+    conversation_history: Optional[List[Dict[str, str]]] = None,
 ) -> Dict[str, Any]:
-    return agent.run_agent(query, conversation_history)
+    return agent.run_agent(user_id, username, query, conversation_history)
 
 
 def run_agent_stream(
-    query: str, conversation_history: Optional[List[Dict[str, str]]] = None
+    user_id: int,
+    username: str,
+    query: str,
+    conversation_history: Optional[List[Dict[str, str]]] = None,
 ):
-    return agent.run_agent_stream(query, conversation_history)
+    return agent.run_agent_stream(user_id, username, query, conversation_history)
