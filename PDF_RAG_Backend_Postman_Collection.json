@@ -380,9 +380,15 @@
 	"variable": [
 		{
 			"key": "base_url",
+			"value": "https://your-railway-app.railway.app",
+			"type": "string",
+			"description": "Base URL for the PDF RAG Backend API deployed on Railway"
+		},
+		{
+			"key": "local_url",
 			"value": "http://localhost:8000",
 			"type": "string",
-			"description": "Base URL for the PDF RAG Backend API"
+			"description": "Local development URL"
 		}
 	]
 }

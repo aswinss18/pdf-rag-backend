@@ -21,6 +21,9 @@ class Settings:
     allowed_origins: list = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://pdf-rag-app-xi.vercel.app",
+        "https://*.vercel.app",
+        "*"  # Allow all origins for development - remove in production
     ]
 
     def __init__(self):
