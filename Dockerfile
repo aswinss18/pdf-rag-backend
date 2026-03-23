@@ -52,5 +52,6 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Expose the port that the application listens on.
 EXPOSE 8000
 
-# Run the application with Gunicorn and Uvicorn workers for optimal performance
-CMD ["python", "-m", "gunicorn", "main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:$PORT", "--access-logfile", "-", "--error-logfile", "-"]
+# Run the application with Gunicorn and Uvicorn workers for optimal performance.
+# Use a shell so the runtime PORT environment variable is expanded correctly.
+CMD ["sh", "-c", "python -m gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT:-8000} --access-logfile - --error-logfile -"]
