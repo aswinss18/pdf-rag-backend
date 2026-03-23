@@ -15,6 +15,28 @@ from app.services.internals.multi_document_context import (
 logger = logging.getLogger(__name__)
 
 
+def _summarize_documents(chunks):
+    """Build per-document statistics from a stable chunk snapshot."""
+    doc_info = {}
+    for chunk in chunks:
+        doc_name = chunk.get("doc", "unknown")
+        page = chunk.get("page", 0)
+
+        if doc_name not in doc_info:
+            doc_info[doc_name] = {"chunk_count": 0, "pages": set()}
+
+        doc_info[doc_name]["chunk_count"] += 1
+        doc_info[doc_name]["pages"].add(page)
+
+    for info in doc_info.values():
+        pages = sorted(info["pages"])
+        info["pages"] = pages
+        info["page_range"] = f"{min(pages)}-{max(pages)}" if pages else "unknown"
+        info["total_pages"] = len(pages)
+
+    return doc_info
+
+
 def search_documents(query: str) -> Dict[str, Any]:
     """Search through uploaded PDF documents using hybrid RAG pipeline."""
     try:
@@ -56,24 +78,14 @@ def list_available_documents() -> Dict[str, Any]:
                 "total_documents": 0,
                 "total_chunks": 0,
             }
-        doc_info = {}
-        for chunk in documents:
-            doc_name = chunk.get("doc", "unknown")
-            if doc_name not in doc_info:
-                doc_info[doc_name] = {"chunk_count": 0, "pages": set()}
-            doc_info[doc_name]["chunk_count"] += 1
-            doc_info[doc_name]["pages"].add(chunk.get("page", 0))
-        for doc_name in doc_info:
-            pages = sorted(list(doc_info[doc_name]["pages"]))
-            doc_info[doc_name]["pages"] = pages
-            doc_info[doc_name]["page_range"] = f"{min(pages)}-{max(pages)}" if pages else "unknown"
-            doc_info[doc_name]["total_pages"] = len(pages)
+        chunks_snapshot = list(documents)
+        doc_info = _summarize_documents(chunks_snapshot)
         return {
             "success": True,
             "documents": doc_info,
             "total_documents": len(doc_info),
-            "total_chunks": len(documents),
-            "message": f"Found {len(doc_info)} documents with {len(documents)} total chunks.",
+            "total_chunks": len(chunks_snapshot),
+            "message": f"Found {len(doc_info)} documents with {len(chunks_snapshot)} total chunks.",
         }
     except Exception as e:
         logger.error(f"Error listing documents: {e}")

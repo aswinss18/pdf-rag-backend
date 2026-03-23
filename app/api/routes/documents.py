@@ -16,6 +16,27 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _summarize_documents(chunks):
+    """Build per-document statistics from a stable chunk snapshot."""
+    doc_info = {}
+    for chunk in chunks:
+        doc_name = chunk.get("doc", "unknown")
+        page = chunk.get("page", 0)
+
+        if doc_name not in doc_info:
+            doc_info[doc_name] = {"chunk_count": 0, "pages": set()}
+
+        doc_info[doc_name]["chunk_count"] += 1
+        doc_info[doc_name]["pages"].add(page)
+
+    for info in doc_info.values():
+        pages = sorted(info["pages"])
+        info["pages"] = pages
+        info["page_range"] = f"{min(pages)}-{max(pages)}" if pages else "unknown"
+
+    return doc_info
+
+
 @router.post("/upload", response_model=UploadResponse, summary="Upload and process a PDF")
 async def upload_pdf(file: UploadFile = File(...)):
     """Upload a PDF file, process it through the RAG pipeline, and store embeddings."""
@@ -44,41 +65,13 @@ async def upload_pdf(file: UploadFile = File(...)):
 @router.get("/documents", summary="List loaded documents")
 async def list_documents():
     """List all currently loaded documents with statistics."""
-    unique_docs = set(chunk.get("doc", "unknown") for chunk in documents)
-    doc_info = {}
-    for chunk in documents:
-        doc_name = chunk.get("doc", "unknown")
-        if doc_name not in doc_info:
-            doc_info[doc_name] = {"chunk_count": 0, "pages": set()}
-        doc_info[doc_name]["chunk_count"] += 1
-        doc_info[doc_name]["pages"].add(chunk.get("page", 0))
-    for doc_name in doc_info:
-        pages = sorted(list(doc_info[doc_name]["pages"]))
-        doc_info[doc_name]["pages"] = pages
-        doc_info[doc_name]["page_range"] = (
-            f"{min(pages)}-{max(pages)}" if pages else "unknown"
-        )
-        del doc_info[doc_name]  # rebuild below without set
-    # Rebuild cleanly
-    doc_info_clean = {}
-    for chunk in documents:
-        doc_name = chunk.get("doc", "unknown")
-        if doc_name not in doc_info_clean:
-            pages_list = sorted(
-                set(c.get("page", 0) for c in documents if c.get("doc") == doc_name)
-            )
-            doc_info_clean[doc_name] = {
-                "chunk_count": sum(1 for c in documents if c.get("doc") == doc_name),
-                "pages": pages_list,
-                "page_range": (
-                    f"{min(pages_list)}-{max(pages_list)}" if pages_list else "unknown"
-                ),
-            }
+    chunks_snapshot = list(documents)
+    doc_info = _summarize_documents(chunks_snapshot)
     return {
         "success": True,
-        "total_documents": len(doc_info_clean),
-        "total_chunks": len(documents),
-        "documents": doc_info_clean,
+        "total_documents": len(doc_info),
+        "total_chunks": len(chunks_snapshot),
+        "documents": doc_info,
     }
 
 
