@@ -1,0 +1,119 @@
+[
+  {
+    "text": "User's name is alice and i work as a senior data scientist at google",
+    "type": "fact",
+    "importance": 1.0,
+    "timestamp": 1773825951.0905447,
+    "access_count": 0,
+    "last_accessed": 1773825951.090545,
+    "metadata": {
+      "source": "conversation",
+      "extracted_from": "My name is Alice and I work as a Senior Data Scientist at Google. My annual salary is $150,000.",
+      "confidence": "high"
+    }
+  },
+  {
+    "text": "User works as a senior data scientist at google",
+    "type": "fact",
+    "importance": 0.6,
+    "timestamp": 1773825951.803696,
+    "access_count": 0,
+    "last_accessed": 1773825951.8036962,
+    "metadata": {
+      "source": "conversation",
+      "extracted_from": "My name is Alice and I work as a Senior Data Scientist at Google. My annual salary is $150,000.",
+      "confidence": "high"
+    }
+  },
+  {
+    "text": "Salary information mentioned: My name is Alice and I work as a Senior Data Scientist at Google. My annual salary is $150,000.",
+    "type": "fact",
+    "importance": 1.0,
+    "timestamp": 1773825952.4802408,
+    "access_count": 0,
+    "last_accessed": 1773825952.4802413,
+    "metadata": {
+      "source": "conversation",
+      "extracted_from": "My name is Alice and I work as a Senior Data Scientist at Google. My annual salary is $150,000.",
+      "confidence": "high"
+    }
+  },
+  {
+    "text": "User lives in san francisco",
+    "type": "fact",
+    "importance": 0.6,
+    "timestamp": 1773825957.9792953,
+    "access_count": 0,
+    "last_accessed": 1773825957.9792955,
+    "metadata": {
+      "source": "conversation",
+      "extracted_from": "I live in San Francisco, California. I have 8 years of experience in machine learning.",
+      "confidence": "high"
+    }
+  },
+  {
+    "text": "User's name is sarah and i work as a machine learning engineer at openai",
+    "type": "fact",
+    "importance": 1.0,
+    "timestamp": 1773826606.5155106,
+    "access_count": 0,
+    "last_accessed": 1773826606.5155108,
+    "metadata": {
+      "source": "conversation",
+      "extracted_from": "My name is Sarah and I work as a Machine Learning Engineer at OpenAI",
+      "confidence": "high"
+    }
+  },
+  {
+    "text": "User works as a machine learning engineer at openai",
+    "type": "fact",
+    "importance": 0.6,
+    "timestamp": 1773826607.3131359,
+    "access_count": 0,
+    "last_accessed": 1773826607.313136,
+    "metadata": {
+      "source": "conversation",
+      "extracted_from": "My name is Sarah and I work as a Machine Learning Engineer at OpenAI",
+      "confidence": "high"
+    }
+  },
+  {
+    "text": "User lives in seattle",
+    "type": "fact",
+    "importance": 0.6,
+    "timestamp": 1773826614.4180944,
+    "access_count": 0,
+    "last_accessed": 1773826614.4180946,
+    "metadata": {
+      "source": "conversation",
+      "extracted_from": "I live in Seattle, Washington and my salary is $180,000 per year",
+      "confidence": "high"
+    }
+  },
+  {
+    "text": "Salary information mentioned: I live in Seattle, Washington and my salary is $180,000 per year",
+    "type": "fact",
+    "importance": 1.0,
+    "timestamp": 1773826615.0878496,
+    "access_count": 0,
+    "last_accessed": 1773826615.08785,
+    "metadata": {
+      "source": "conversation",
+      "extracted_from": "I live in Seattle, Washington and my salary is $180,000 per year",
+      "confidence": "high"
+    }
+  },
+  {
+    "text": "Salary information mentioned: Calculate 15% of my salary and tell me about my work experience",
+    "type": "fact",
+    "importance": 1.0,
+    "timestamp": 1773827207.968913,
+    "access_count": 0,
+    "last_accessed": 1773827207.9689136,
+    "metadata": {
+      "source": "conversation",
+      "extracted_from": "Calculate 15% of my salary and tell me about my work experience",
+      "confidence": "high"
+    }
+  }
+]

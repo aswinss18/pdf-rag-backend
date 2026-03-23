@@ -1,0 +1,18 @@
+{
+  "filename": "unknown",
+  "file_hash": "",
+  "processing_timestamp": "2026-03-20T16:11:28.806582",
+  "document_count": 6,
+  "total_chunks": 393,
+  "faiss_index_size": 393,
+  "documents": [
+    "GLEMP0170_Salary_DECEMBER2025.pdf",
+    "offerletter.aswin.pdf",
+    "WLEMP003120252026.pdf",
+    "Revision Letter Aswin SS.pdf",
+    "aswin_software_developer.pdf",
+    "certificate-f3qryjz5kxrd-1758714022.pdf"
+  ],
+  "last_saved": "2026-03-20T16:11:28.806629",
+  "version": "1.0"
+}
