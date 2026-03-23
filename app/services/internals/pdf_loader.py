@@ -1,7 +1,10 @@
+import os
+
 from pypdf import PdfReader
 
 def load_pdf(file_path):
     reader = PdfReader(file_path)
+    filename = os.path.basename(file_path)
 
     pages_data = []
 
@@ -11,7 +14,7 @@ def load_pdf(file_path):
             pages_data.append({
                 "text": text,
                 "page": page_num,
-                "doc": file_path.split("/")[-1]  # Extract filename
+                "doc": filename
             })
 
     return pages_data

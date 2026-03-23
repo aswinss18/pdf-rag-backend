@@ -8,7 +8,7 @@ import logging
 from typing import Dict, Any, List, Optional
 from openai import OpenAI
 from app.core.auth import set_current_user_context
-from app.tools.registry import execute_tool_from_registry, TOOLS_REGISTRY
+from app.tools.registry import execute_tool_from_registry
 from app.tools.schemas import get_tool_schemas
 from app.services.internals.memory import (
     agent_memory,
@@ -76,9 +76,9 @@ class AIAgent:
                     else conversation_history
                 )
                 messages.extend(limited_history)
-                else:
-                    chat_history = get_chat_history(user_id, max_messages=4)
-                    messages.extend(chat_history)
+            else:
+                chat_history = get_chat_history(user_id, max_messages=4)
+                messages.extend(chat_history)
 
             messages.append({"role": "user", "content": query})
             add_to_chat_history(user_id, "user", query)

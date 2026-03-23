@@ -6,7 +6,7 @@ import logging
 import re
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import faiss
@@ -52,7 +52,7 @@ class AgentMemory:
 
     def add_to_chat_history(self, user_id: int, role: str, content: str):
         state = self._get_state(user_id)
-        message = {"role": role, "content": content, "timestamp": datetime.utcnow().isoformat()}
+        message = {"role": role, "content": content, "timestamp": datetime.now(timezone.utc).isoformat()}
         state.chat_history.append(message)
         state.chat_history = state.chat_history[-20:]
         sqlite_store.add_chat_message(user_id, role, content, message["timestamp"])

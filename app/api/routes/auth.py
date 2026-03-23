@@ -4,7 +4,7 @@ Authentication routes.
 
 import logging
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.auth import create_access_token, get_current_user, hash_password, verify_password
 from app.db.sqlite_store import create_user, get_user_by_username

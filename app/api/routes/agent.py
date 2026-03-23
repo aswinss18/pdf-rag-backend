@@ -4,8 +4,9 @@ Agent routes — ReAct pattern with tool calling.
 
 import json
 import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from app.core.auth import get_current_user
 from app.models.schemas import AgentRequest, AgentResponse
 from app.services.agent_service import run, run_stream
 
@@ -15,10 +16,10 @@ router = APIRouter()
 
 
 @router.post("/agent", response_model=AgentResponse, summary="ReAct agent query")
-async def agent(request: AgentRequest):
+async def agent(request: AgentRequest, user=Depends(get_current_user)):
     """Run the ReAct agent on a query. The agent can call tools like document search."""
     try:
-        result = run(request.query, request.conversation_history)
+        result = run(user["id"], user["username"], request.query, request.conversation_history)
         return AgentResponse(
             success=result.get("success", False),
             query=request.query,
@@ -34,11 +35,11 @@ async def agent(request: AgentRequest):
 
 
 @router.post("/agent-stream", summary="Streaming ReAct agent query")
-async def agent_stream(request: AgentRequest):
+async def agent_stream(request: AgentRequest, user=Depends(get_current_user)):
     """Stream the ReAct agent response (Server-Sent Events)."""
     def generate():
         try:
-            for chunk in run_stream(request.query, request.conversation_history):
+            for chunk in run_stream(user["id"], user["username"], request.query, request.conversation_history):
                 yield f"data: {json.dumps(chunk)}\n\n"
         except Exception as e:
             logger.error(f"/agent-stream failed: {e}")

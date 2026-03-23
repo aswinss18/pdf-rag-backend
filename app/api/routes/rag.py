@@ -4,8 +4,9 @@ RAG /ask routes (non-streaming and streaming).
 
 import json
 import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from app.core.auth import get_current_user
 from app.models.schemas import AskRequest, RagResponse
 from app.services.rag_service import query as rag_query, query_stream_with_sources
 
@@ -15,10 +16,10 @@ router = APIRouter()
 
 
 @router.post("/ask", response_model=RagResponse, summary="RAG question answering")
-async def ask(request: AskRequest):
+async def ask(request: AskRequest, user=Depends(get_current_user)):
     """Answer a question using the uploaded PDF documents via hybrid RAG pipeline."""
     try:
-        answer = rag_query(request.query)
+        answer = rag_query(user["id"], request.query)
         return RagResponse(
             success=True,
             query=request.query,
@@ -30,11 +31,11 @@ async def ask(request: AskRequest):
 
 
 @router.post("/ask-stream", summary="Streaming RAG answer with sources")
-async def ask_stream(request: AskRequest):
+async def ask_stream(request: AskRequest, user=Depends(get_current_user)):
     """Stream the RAG answer with source metadata (Server-Sent Events)."""
     def generate():
         try:
-            for chunk_data in query_stream_with_sources(request.query):
+            for chunk_data in query_stream_with_sources(user["id"], request.query):
                 yield f"data: {json.dumps(chunk_data)}\n\n"
         except Exception as e:
             logger.error(f"/ask-stream failed: {e}")

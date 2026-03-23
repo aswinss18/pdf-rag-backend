@@ -9,6 +9,7 @@ from typing import Any, Dict, List
 import faiss
 import numpy as np
 
+from app.core.config import settings
 from app.db import sqlite_store
 from app.services.internals.keyword_search import KeywordSearcher
 
@@ -117,7 +118,7 @@ def get_persistence_status(user_id: int) -> Dict[str, Any]:
     documents = get_documents(user_id)
     unique_docs = sorted({document.get("doc", "unknown") for document in documents})
     return {
-        "sqlite_db_path": sqlite_store.settings.sqlite_db_path if hasattr(sqlite_store, "settings") else "",
+        "sqlite_db_path": settings.sqlite_db_path,
         "document_count": len(unique_docs),
         "total_chunks": len(documents),
         "documents": unique_docs,

@@ -6,7 +6,7 @@ import json
 import logging
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Iterator, List, Optional, Sequence
 
 from app.core.config import settings
@@ -95,7 +95,7 @@ def init_database() -> None:
 
 
 def create_user(username: str, password_hash: str) -> Dict[str, Any]:
-    created_at = datetime.utcnow().isoformat()
+    created_at = datetime.now(timezone.utc).isoformat()
     with get_connection() as connection:
         cursor = connection.execute(
             "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)",
@@ -127,7 +127,7 @@ def replace_document_chunks(
     chunks: List[Dict[str, Any]],
     embeddings: List[List[float]],
 ) -> None:
-    created_at = datetime.utcnow().isoformat()
+    created_at = datetime.now(timezone.utc).isoformat()
     with get_connection() as connection:
         connection.execute(
             "DELETE FROM document_chunks WHERE user_id = ? AND doc_name = ?",
