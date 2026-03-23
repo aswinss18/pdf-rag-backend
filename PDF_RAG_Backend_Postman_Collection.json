@@ -1,0 +1,388 @@
+{
+	"info": {
+		"_postman_id": "pdf-rag-backend-collection",
+		"name": "PDF RAG Backend API",
+		"description": "Complete API collection for PDF RAG Assistant - Production-ready PDF Retrieval-Augmented Generation API with multi-document support, hybrid search, ReAct agent, and persistent memory.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "pdf-rag-backend"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Health check endpoint to verify the service is running."
+					},
+					"response": []
+				}
+			],
+			"description": "Basic health check endpoints"
+		},
+		{
+			"name": "Documents",
+			"item": [
+				{
+					"name": "Upload PDF",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": [],
+									"description": "PDF file to upload and process"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/upload",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"upload"
+							]
+						},
+						"description": "Upload a PDF file, process it through the RAG pipeline, and store embeddings."
+					},
+					"response": []
+				},
+				{
+					"name": "List Documents",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents"
+							]
+						},
+						"description": "List all currently loaded documents with statistics including chunk count and page ranges."
+					},
+					"response": []
+				},
+				{
+					"name": "Clear All Documents",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents"
+							]
+						},
+						"description": "Remove all loaded documents and reset the vector store."
+					},
+					"response": []
+				},
+				{
+					"name": "System Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"status"
+							]
+						},
+						"description": "Get system status including loaded documents, persistence info, and model configuration."
+					},
+					"response": []
+				}
+			],
+			"description": "Document upload and management endpoints"
+		},
+		{
+			"name": "RAG (Retrieval-Augmented Generation)",
+			"item": [
+				{
+					"name": "Ask Question",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"query\": \"What is the main topic of the uploaded documents?\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/ask",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ask"
+							]
+						},
+						"description": "Answer a question using the uploaded PDF documents via hybrid RAG pipeline."
+					},
+					"response": []
+				},
+				{
+					"name": "Ask Question (Streaming)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "text/event-stream"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"query\": \"Explain the key concepts from the documents in detail.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/ask-stream",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ask-stream"
+							]
+						},
+						"description": "Stream the RAG answer with source metadata using Server-Sent Events."
+					},
+					"response": []
+				}
+			],
+			"description": "RAG question answering endpoints with hybrid search"
+		},
+		{
+			"name": "Agent (ReAct Pattern)",
+			"item": [
+				{
+					"name": "Agent Query",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"query\": \"Search for information about project timelines and create a summary.\",\n    \"conversation_history\": [\n        {\n            \"role\": \"user\",\n            \"content\": \"Hello, I need help with document analysis.\"\n        },\n        {\n            \"role\": \"assistant\",\n            \"content\": \"I'm ready to help you analyze your documents. What would you like to know?\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agent",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agent"
+							]
+						},
+						"description": "Run the ReAct agent on a query. The agent can call tools like document search and has access to conversation history."
+					},
+					"response": []
+				},
+				{
+					"name": "Agent Query (Streaming)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "text/event-stream"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"query\": \"Analyze the uploaded documents and provide insights about the main themes.\",\n    \"conversation_history\": []\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agent-stream",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agent-stream"
+							]
+						},
+						"description": "Stream the ReAct agent response using Server-Sent Events with real-time tool execution updates."
+					},
+					"response": []
+				}
+			],
+			"description": "ReAct pattern agent with tool calling capabilities"
+		},
+		{
+			"name": "Memory Management",
+			"item": [
+				{
+					"name": "Memory Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/memory/stats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"memory",
+								"stats"
+							]
+						},
+						"description": "Get current memory system statistics including memory usage and performance metrics."
+					},
+					"response": []
+				},
+				{
+					"name": "Detailed Memory Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/memory/info",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"memory",
+								"info"
+							]
+						},
+						"description": "Get detailed memory info including recent samples and system health information."
+					},
+					"response": []
+				},
+				{
+					"name": "Clear Chat History",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/memory/chat",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"memory",
+								"chat"
+							]
+						},
+						"description": "Clear the short-term chat history while preserving long-term memory."
+					},
+					"response": []
+				},
+				{
+					"name": "Clear All Memory",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/memory/all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"memory",
+								"all"
+							]
+						},
+						"description": "Clear all memory including both long-term memory and chat history."
+					},
+					"response": []
+				},
+				{
+					"name": "Cleanup Old Memories",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/memory/cleanup?days=30",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"memory",
+								"cleanup"
+							],
+							"query": [
+								{
+									"key": "days",
+									"value": "30",
+									"description": "Number of days - memories older than this will be removed"
+								}
+							]
+						},
+						"description": "Remove memories older than specified days and apply decay to remaining memories."
+					},
+					"response": []
+				}
+			],
+			"description": "Memory management endpoints for persistent conversation memory"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string",
+			"description": "Base URL for the PDF RAG Backend API"
+		}
+	]
+}
