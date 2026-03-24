@@ -89,6 +89,21 @@ def init_database() -> None:
 
             CREATE INDEX IF NOT EXISTS idx_chat_history_user_id
             ON chat_history(user_id);
+
+            CREATE TABLE IF NOT EXISTS usage (
+                id TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                requests INTEGER NOT NULL DEFAULT 0,
+                tokens INTEGER NOT NULL DEFAULT 0,
+                date TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE (user_id, date)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_usage_user_id_date
+            ON usage(user_id, date);
             """
         )
     logger.info("SQLite database initialized at %s", settings.sqlite_db_path)
@@ -335,3 +350,64 @@ def trim_chat_history(user_id: int, keep_last: int = 20) -> None:
 def clear_chat_history(user_id: int) -> None:
     with get_connection() as connection:
         connection.execute("DELETE FROM chat_history WHERE user_id = ?", (user_id,))
+
+
+def get_usage_for_date(user_id: int, date: str) -> Optional[Dict[str, Any]]:
+    with get_connection() as connection:
+        return connection.execute(
+            """
+            SELECT id, user_id, requests, tokens, date, created_at, updated_at
+            FROM usage
+            WHERE user_id = ? AND date = ?
+            """,
+            (user_id, date),
+        ).fetchone()
+
+
+def upsert_usage(user_id: int, date: str, requests_delta: int = 0, tokens_delta: int = 0) -> Dict[str, Any]:
+    now = datetime.now(timezone.utc).isoformat()
+    with get_connection() as connection:
+        existing = connection.execute(
+            """
+            SELECT id, user_id, requests, tokens, date, created_at, updated_at
+            FROM usage
+            WHERE user_id = ? AND date = ?
+            """,
+            (user_id, date),
+        ).fetchone()
+
+        if existing:
+            requests = int(existing["requests"]) + requests_delta
+            tokens = int(existing["tokens"]) + tokens_delta
+            connection.execute(
+                """
+                UPDATE usage
+                SET requests = ?, tokens = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (requests, tokens, now, existing["id"]),
+            )
+            return {
+                **existing,
+                "requests": requests,
+                "tokens": tokens,
+                "updated_at": now,
+            }
+
+        usage_id = f"{user_id}-{date}"
+        connection.execute(
+            """
+            INSERT INTO usage (id, user_id, requests, tokens, date, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (usage_id, user_id, max(requests_delta, 0), max(tokens_delta, 0), date, now, now),
+        )
+        return {
+            "id": usage_id,
+            "user_id": user_id,
+            "requests": max(requests_delta, 0),
+            "tokens": max(tokens_delta, 0),
+            "date": date,
+            "created_at": now,
+            "updated_at": now,
+        }

@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.auth import create_access_token, get_current_user, hash_password, verify_password
 from app.db.sqlite_store import create_user, get_user_by_username
-from app.models.schemas import AuthRequest, AuthResponse
+from app.models.schemas import AuthRequest, AuthResponse, MeResponse
+from app.services.usage_service import get_usage_snapshot
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,6 @@ async def login(request: AuthRequest):
     )
 
 
-@router.get("/me", summary="Get the authenticated user")
+@router.get("/me", response_model=MeResponse, summary="Get the authenticated user")
 async def me(user=Depends(get_current_user)):
-    return {"success": True, "user": user}
+    return {"success": True, "user": user, "usage": get_usage_snapshot(user["id"])}

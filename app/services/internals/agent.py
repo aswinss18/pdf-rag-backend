@@ -32,6 +32,12 @@ class AIAgent:
     def execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         return execute_tool_from_registry(tool_name, arguments)
 
+    @staticmethod
+    def _extract_total_tokens(response: Any) -> int:
+        usage = getattr(response, "usage", None)
+        total_tokens = getattr(usage, "total_tokens", 0) if usage is not None else 0
+        return int(total_tokens or 0)
+
     def run_agent_react(
         self,
         user_id: int,
@@ -86,6 +92,7 @@ class AIAgent:
             tool_results = []
             reasoning_steps = []
             final_answer = ""
+            total_tokens_used = 0
 
             for step in range(max_steps):
                 logger.info(f"ReAct Step {step + 1}: Processing query")
@@ -96,6 +103,7 @@ class AIAgent:
                     tool_choice="auto",
                     temperature=0.1,
                 )
+                total_tokens_used += self._extract_total_tokens(response)
                 response_message = response.choices[0].message
                 tool_calls = response_message.tool_calls
                 messages.append(response_message)
@@ -136,6 +144,7 @@ class AIAgent:
                 final_response = self.client.chat.completions.create(
                     model=self.model, messages=messages, temperature=0.1
                 )
+                total_tokens_used += self._extract_total_tokens(final_response)
                 final_answer = final_response.choices[0].message.content
 
             add_to_chat_history(user_id, "assistant", final_answer)
@@ -182,6 +191,7 @@ class AIAgent:
                 "memory_context_info": memory_context_info,
                 "optimization_applied": True,
                 "prompt_architecture": "modular_optimized",
+                "tokens_used": total_tokens_used,
             }
 
         except Exception as e:
@@ -199,6 +209,7 @@ class AIAgent:
                 "memory_used": False,
                 "optimization_applied": True,
                 "prompt_architecture": "modular_optimized",
+                "tokens_used": 0,
             }
 
     def run_agent(
@@ -230,6 +241,7 @@ class AIAgent:
                     "react_pattern": result.get("react_pattern", True),
                     "memory_used": result.get("memory_used", False),
                     "memory_context_info": result.get("memory_context_info"),
+                    "tokens_used": result.get("tokens_used", 0),
                 }
                 chunk_size = 50
                 for i in range(0, len(answer), chunk_size):

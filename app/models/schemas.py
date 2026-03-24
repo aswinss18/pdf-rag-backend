@@ -53,6 +53,19 @@ class AuthResponse(StandardResponse):
     username: str
 
 
+class UsageSummary(BaseModel):
+    date: str
+    requests_used: int = 0
+    requests_limit: int = 0
+    requests_remaining: int = 0
+    tokens_used: int = 0
+
+
+class MeResponse(StandardResponse):
+    user: Dict[str, Any] = Field(default_factory=dict)
+    usage: UsageSummary
+
+
 # ---------------------------------------------------------------------------
 # Ask / RAG
 # ---------------------------------------------------------------------------
@@ -95,6 +108,7 @@ class AgentResponse(StandardResponse):
     reasoning_steps: List[Dict[str, Any]] = Field(default_factory=list)
     optimization_applied: bool = True
     prompt_architecture: str = "modular_optimized"
+    usage: Optional[UsageSummary] = None
 
 
 # ---------------------------------------------------------------------------
