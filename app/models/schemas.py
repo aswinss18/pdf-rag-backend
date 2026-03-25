@@ -45,6 +45,8 @@ class UploadResponse(StandardResponse):
     filename: str
     chunks_created: int = 0
     documents_loaded: int = 0
+    status: str = "completed"
+    message: Optional[str] = None
 
 
 class AuthResponse(StandardResponse):
