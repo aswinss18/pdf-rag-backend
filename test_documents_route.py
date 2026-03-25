@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.db.sqlite_store import create_user, init_database
 from app.db.vector_store import add_embeddings, clear_documents
 from app.main import create_app
+from app.services.upload_jobs import clear_user_jobs, create_job, update_job
 
 
 class DocumentsRouteTests(unittest.TestCase):
@@ -35,6 +36,7 @@ class DocumentsRouteTests(unittest.TestCase):
 
     def tearDown(self):
         clear_documents(self.user["id"])
+        clear_user_jobs(self.user["id"])
         self.app.dependency_overrides.clear()
         settings.sqlite_db_path = self._original_sqlite_db_path
         self._temp_dir.cleanup()
@@ -53,6 +55,23 @@ class DocumentsRouteTests(unittest.TestCase):
         self.assertEqual(result["documents"]["beta.pdf"]["chunk_count"], 1)
         self.assertEqual(result["documents"]["beta.pdf"]["pages"], [5])
         self.assertEqual(result["documents"]["beta.pdf"]["page_range"], "5-5")
+
+    def test_job_status_returns_current_job_for_user(self):
+        job = create_job(self.user["id"], "queued.pdf")
+        update_job(
+            job["job_id"],
+            status="processing",
+            message="Chunking PDF and generating embeddings.",
+        )
+
+        response = self.client.get(f"/job/{job['job_id']}")
+        result = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(result["success"])
+        self.assertEqual(result["job_id"], job["job_id"])
+        self.assertEqual(result["filename"], "queued.pdf")
+        self.assertEqual(result["status"], "processing")
 
 
 if __name__ == "__main__":

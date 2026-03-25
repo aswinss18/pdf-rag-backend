@@ -43,10 +43,23 @@ class AuthRequest(BaseModel):
 
 class UploadResponse(StandardResponse):
     filename: str
+    job_id: Optional[str] = None
     chunks_created: int = 0
     documents_loaded: int = 0
     status: str = "completed"
     message: Optional[str] = None
+
+
+class JobStatusResponse(StandardResponse):
+    job_id: str
+    filename: str
+    status: str
+    message: Optional[str] = None
+    error: Optional[str] = None
+    chunks_created: int = 0
+    documents_loaded: int = 0
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
 
 
 class AuthResponse(StandardResponse):

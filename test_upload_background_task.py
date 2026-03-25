@@ -6,6 +6,7 @@ from fastapi import BackgroundTasks, UploadFile
 
 from app.api.routes import documents
 from app.core.config import settings
+from app.services import upload_jobs
 
 
 class UploadBackgroundTaskTests(unittest.IsolatedAsyncioTestCase):
@@ -13,10 +14,10 @@ class UploadBackgroundTaskTests(unittest.IsolatedAsyncioTestCase):
         self._original_upload_dir = settings.upload_dir
         self._temp_dir = tempfile.TemporaryDirectory()
         settings.upload_dir = self._temp_dir.name
-        documents._processing_status.clear()
+        upload_jobs._jobs.clear()
 
     async def asyncTearDown(self):
-        documents._processing_status.clear()
+        upload_jobs._jobs.clear()
         settings.upload_dir = self._original_upload_dir
         self._temp_dir.cleanup()
 
@@ -49,10 +50,12 @@ class UploadBackgroundTaskTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(os.path.exists(saved_path))
             self.assertEqual(response.status, "queued")
             self.assertEqual(response.filename, "sample.pdf")
+            self.assertTrue(response.job_id)
             self.assertEqual(response.chunks_created, 0)
             self.assertEqual(len(calls), 1)
             self.assertIs(calls[0][0], documents._run_document_processing)
-            self.assertEqual(calls[0][1], (123, "sample.pdf", saved_path))
+            self.assertEqual(calls[0][1], (123, response.job_id, "sample.pdf", saved_path))
+            self.assertEqual(upload_jobs.get_job(response.job_id)["status"], "queued")
         finally:
             documents.get_documents = original_get_documents
 
