@@ -22,12 +22,17 @@ def _summarize_documents(chunks):
     for chunk in chunks:
         doc_name = chunk.get("doc", "unknown")
         page = chunk.get("page", 0)
+        created_at = chunk.get("created_at")
 
         if doc_name not in doc_info:
-            doc_info[doc_name] = {"chunk_count": 0, "pages": set()}
+            doc_info[doc_name] = {"chunk_count": 0, "pages": set(), "uploaded_at": created_at}
 
         doc_info[doc_name]["chunk_count"] += 1
         doc_info[doc_name]["pages"].add(page)
+        if created_at and (
+            not doc_info[doc_name].get("uploaded_at") or created_at > doc_info[doc_name]["uploaded_at"]
+        ):
+            doc_info[doc_name]["uploaded_at"] = created_at
 
     for info in doc_info.values():
         pages = sorted(info["pages"])
@@ -36,6 +41,22 @@ def _summarize_documents(chunks):
         info["total_pages"] = len(pages)
 
     return doc_info
+
+
+def _recent_documents(chunks, limit: int) -> list[Dict[str, Any]]:
+    doc_info = _summarize_documents(chunks)
+    ordered = sorted(
+        (
+            {
+                "filename": doc_name,
+                **info,
+            }
+            for doc_name, info in doc_info.items()
+        ),
+        key=lambda item: (item.get("uploaded_at") or "", item["filename"]),
+        reverse=True,
+    )
+    return ordered[: max(limit, 1)]
 
 
 def search_documents(query: str) -> Dict[str, Any]:
@@ -100,4 +121,34 @@ def list_available_documents() -> Dict[str, Any]:
             "documents": {},
             "total_documents": 0,
             "total_chunks": 0,
+        }
+
+
+def list_recent_documents(limit: int = 5) -> Dict[str, Any]:
+    """List uploaded documents ordered by most recent upload time."""
+    try:
+        user_id = get_current_user_id()
+        documents = get_documents(user_id)
+        if not documents:
+            return {
+                "success": True,
+                "message": "No documents are currently loaded.",
+                "documents": [],
+                "total_documents": 0,
+            }
+
+        recent_documents = _recent_documents(list(documents), limit)
+        return {
+            "success": True,
+            "documents": recent_documents,
+            "total_documents": len(recent_documents),
+            "message": f"Found {len(recent_documents)} recent document(s), ordered newest first.",
+        }
+    except Exception as e:
+        logger.error(f"Error listing recent documents: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to list recent documents: {str(e)}",
+            "documents": [],
+            "total_documents": 0,
         }

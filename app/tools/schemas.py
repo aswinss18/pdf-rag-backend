@@ -31,10 +31,27 @@ TOOL_SCHEMAS = [
         "type": "function",
         "function": {
             "name": "list_available_documents",
-            "description": "List all currently loaded PDF documents with their statistics including chunk counts, page ranges, and document names. Use this when users want to know what documents are available or get document statistics.",
+            "description": "List all currently loaded PDF documents with their statistics including chunk counts, page ranges, document names, and upload timestamps. Use this when users want to know what documents are available or get document statistics. This is not guaranteed to be ordered by recency.",
             "parameters": {
                 "type": "object",
                 "properties": {},
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_recent_documents",
+            "description": "List currently loaded PDF documents ordered by most recent upload time. Use this when users ask for the latest, most recent, last uploaded, or newest documents.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of recent documents to return."
+                    }
+                },
                 "required": []
             }
         }

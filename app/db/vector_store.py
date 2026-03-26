@@ -49,6 +49,7 @@ def _load_user_state(user_id: int) -> UserVectorState:
             "page": row["page"],
             "chunk_index": row["chunk_index"],
             "text": row["text"],
+            "created_at": row["created_at"],
         }
         for row in rows
     ]

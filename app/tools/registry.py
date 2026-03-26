@@ -5,7 +5,7 @@ Combines document tools and utility tools, provides execution with error handlin
 
 import logging
 from typing import Dict, Any, List
-from app.tools.document_tools import search_documents, list_available_documents
+from app.tools.document_tools import search_documents, list_available_documents, list_recent_documents
 from app.tools.utility_tools import (
     calculate_percentage,
     calculate_salary_increment,
@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 TOOLS_REGISTRY: Dict[str, Any] = {
     "search_documents": search_documents,
     "list_available_documents": list_available_documents,
+    "list_recent_documents": list_recent_documents,
     "calculate_percentage": calculate_percentage,
     "calculate_salary_increment": calculate_salary_increment,
     "get_weather": get_weather,

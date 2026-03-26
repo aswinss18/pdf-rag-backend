@@ -63,7 +63,12 @@ Be systematic and concise."""
 2. Extract relevant information
 3. Provide comprehensive answer
 
-For general queries: Use judgment."""
+For general queries: Use judgment.
+
+For requests about latest, recent, newest, or last uploaded documents:
+1. Use list_recent_documents
+2. Do not guess upload order from list_available_documents
+3. If a requested document is not in the recent/current list, say it is not currently loaded."""
 
 class PromptBuilder:
     """Dynamic prompt builder with token optimization"""

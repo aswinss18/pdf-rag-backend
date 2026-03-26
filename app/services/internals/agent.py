@@ -66,7 +66,7 @@ class AIAgent:
                     user_profile = "; ".join(profile_parts) if profile_parts else "General user"
 
             available_tools = [
-                "search_documents", "calculate_percentage", "calculate_salary_increment",
+                "search_documents", "list_recent_documents", "calculate_percentage", "calculate_salary_increment",
                 "get_weather", "convert_currency", "list_available_documents",
             ]
             optimized_prompt = build_optimized_prompt(
