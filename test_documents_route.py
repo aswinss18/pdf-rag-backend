@@ -9,9 +9,6 @@ from app.core.config import settings
 from app.db.sqlite_store import create_user, init_database
 from app.db.vector_store import add_embeddings, clear_documents
 from app.main import create_app
-from app.services.upload_jobs import clear_user_jobs, create_job, update_job
-
-
 class DocumentsRouteTests(unittest.TestCase):
     def setUp(self):
         self._original_sqlite_db_path = settings.sqlite_db_path
@@ -34,9 +31,18 @@ class DocumentsRouteTests(unittest.TestCase):
         add_embeddings(self.user["id"], chunks[:3], embeddings[:3])
         add_embeddings(self.user["id"], chunks[3:], embeddings[3:])
 
+        from app.api.routes import documents
+
+        self._documents_module = documents
+        self._original_get_job = documents.get_job
+        self._original_get_latest_user_job = documents.get_latest_user_job
+        self._original_clear_user_jobs = documents.clear_user_jobs
+
     def tearDown(self):
         clear_documents(self.user["id"])
-        clear_user_jobs(self.user["id"])
+        self._documents_module.get_job = self._original_get_job
+        self._documents_module.get_latest_user_job = self._original_get_latest_user_job
+        self._documents_module.clear_user_jobs = self._original_clear_user_jobs
         self.app.dependency_overrides.clear()
         settings.sqlite_db_path = self._original_sqlite_db_path
         self._temp_dir.cleanup()
@@ -57,19 +63,25 @@ class DocumentsRouteTests(unittest.TestCase):
         self.assertEqual(result["documents"]["beta.pdf"]["page_range"], "5-5")
 
     def test_job_status_returns_current_job_for_user(self):
-        job = create_job(self.user["id"], "queued.pdf")
-        update_job(
-            job["job_id"],
-            status="processing",
-            message="Chunking PDF and generating embeddings.",
-        )
+        self._documents_module.get_job = lambda job_id: {
+            "job_id": job_id,
+            "user_id": self.user["id"],
+            "filename": "queued.pdf",
+            "status": "processing",
+            "message": "Chunking PDF and generating embeddings.",
+            "error": None,
+            "chunks_created": 0,
+            "documents_loaded": 2,
+            "created_at": "2026-03-26T00:00:00+00:00",
+            "updated_at": "2026-03-26T00:01:00+00:00",
+        }
 
-        response = self.client.get(f"/job/{job['job_id']}")
+        response = self.client.get("/job/job-123")
         result = response.json()
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(result["success"])
-        self.assertEqual(result["job_id"], job["job_id"])
+        self.assertEqual(result["job_id"], "job-123")
         self.assertEqual(result["filename"], "queued.pdf")
         self.assertEqual(result["status"], "processing")
 

@@ -6,6 +6,27 @@ services:
       - 8000:8000
     environment:
       - REDIS_URL=redis://redis:6379
+      - RQ_QUEUE_NAME=default
+    volumes:
+      - uploaded-data:/app/uploaded
+      - cache-data:/app/cache
+      - persistence-data:/app/persistence
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+    command: python worker.py
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - RQ_QUEUE_NAME=default
+    volumes:
+      - uploaded-data:/app/uploaded
+      - cache-data:/app/cache
+      - persistence-data:/app/persistence
     depends_on:
       redis:
         condition: service_healthy
@@ -27,3 +48,6 @@ services:
 
 volumes:
   redis-data:
+  uploaded-data:
+  cache-data:
+  persistence-data:

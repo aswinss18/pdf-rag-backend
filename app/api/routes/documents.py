@@ -5,11 +5,10 @@ Upload and document management routes.
 import os
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from app.core.auth import get_current_user
 from app.core.config import settings
-from app.services.rag_service import process_document
-from app.services.upload_jobs import clear_user_jobs, create_job, get_job, get_latest_user_job, update_job
+from app.services.upload_jobs import clear_user_jobs, enqueue_document_processing, get_job, get_latest_user_job
 from app.db.vector_store import clear_documents, get_documents, get_persistence_status
 from app.models.schemas import JobStatusResponse, UploadResponse
 
@@ -39,57 +38,24 @@ def _summarize_documents(chunks):
     return doc_info
 
 
-def _run_document_processing(user_id: int, job_id: str, filename: str, file_path: str) -> None:
-    update_job(
-        job_id,
-        status="processing",
-        message="Chunking PDF and generating embeddings.",
-        error=None,
-    )
-    try:
-        process_document(user_id, file_path)
-        documents = get_documents(user_id)
-        unique_docs = sorted({chunk.get("doc", "unknown") for chunk in documents})
-        update_job(
-            job_id,
-            status="completed",
-            filename=filename,
-            message="Document processed successfully and is ready for search.",
-            error=None,
-            chunks_created=len([chunk for chunk in documents if chunk.get("doc") == filename]),
-            documents_loaded=len(unique_docs),
-        )
-    except Exception as exc:
-        logger.exception("Background document processing failed for %s", file_path)
-        update_job(
-            job_id,
-            status="failed",
-            filename=filename,
-            message="Document processing failed.",
-            error=str(exc),
-        )
-
-
 @router.post("/upload", response_model=UploadResponse, summary="Upload and process a PDF")
 async def upload_pdf(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     user=Depends(get_current_user),
 ):
-    """Upload a PDF file and queue RAG processing in the background."""
+    """Upload a PDF file and enqueue RAG processing with RQ."""
     if not file.filename or not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
     try:
         user_upload_dir = os.path.join(settings.upload_dir, user["username"])
         os.makedirs(user_upload_dir, exist_ok=True)
         file_path = os.path.join(user_upload_dir, file.filename)
-        job = create_job(user["id"], file.filename)
 
         contents = await file.read()
         with open(file_path, "wb") as f:
             f.write(contents)
 
-        background_tasks.add_task(_run_document_processing, user["id"], job["job_id"], file.filename, file_path)
+        job = enqueue_document_processing(user["id"], file.filename, file_path)
         return UploadResponse(
             success=True,
             filename=file.filename,
@@ -133,9 +99,18 @@ async def clear_all_documents(user=Depends(get_current_user)):
 
 @router.get("/job/{job_id}", response_model=JobStatusResponse, summary="Check upload job status")
 async def check_job_status(job_id: str, user=Depends(get_current_user)):
-    """Return the current status for an upload/background processing job."""
+    """Return the current status for an RQ upload job."""
     job = get_job(job_id)
-    if not job or job.get("user_id") != user["id"]:
+    if not job:
+        logger.warning("Job %s was not found in Redis for user_id=%s", job_id, user["id"])
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.get("user_id") != user["id"]:
+        logger.warning(
+            "Job %s belongs to user_id=%s but was requested by user_id=%s",
+            job_id,
+            job.get("user_id"),
+            user["id"],
+        )
         raise HTTPException(status_code=404, detail="Job not found")
 
     return JobStatusResponse(

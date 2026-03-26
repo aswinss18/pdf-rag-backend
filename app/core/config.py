@@ -22,6 +22,8 @@ class Settings:
     jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "change-me-in-production")
     jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
     access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
+    redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379")
+    rq_queue_name: str = os.getenv("RQ_QUEUE_NAME", "default")
     allowed_origins: list = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
