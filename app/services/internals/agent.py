@@ -38,6 +38,14 @@ class AIAgent:
         total_tokens = getattr(usage, "total_tokens", 0) if usage is not None else 0
         return int(total_tokens or 0)
 
+    @staticmethod
+    def _coerce_text(value: Any) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, str):
+            return value
+        return str(value)
+
     def run_agent_react(
         self,
         user_id: int,
@@ -110,7 +118,7 @@ class AIAgent:
 
                 if not tool_calls:
                     logger.info(f"ReAct completed in {step + 1} steps")
-                    final_answer = response_message.content
+                    final_answer = self._coerce_text(response_message.content)
                     break
 
                 logger.info(f"ReAct Step {step + 1}: Executing {len(tool_calls)} tool(s)")
@@ -124,7 +132,8 @@ class AIAgent:
                         arguments = {}
                     tool_result = execute_tool_from_registry(tool_name, arguments)
                     if isinstance(tool_result, dict) and "answer" in tool_result:
-                        answer = tool_result["answer"]
+                        answer = self._coerce_text(tool_result.get("answer"))
+                        tool_result["answer"] = answer
                         if len(answer) > 2000:
                             tool_result["answer"] = answer[:1997] + "..."
                     step_tool = {"tool_name": tool_name, "arguments": arguments, "result": tool_result}
@@ -145,8 +154,9 @@ class AIAgent:
                     model=self.model, messages=messages, temperature=0.1
                 )
                 total_tokens_used += self._extract_total_tokens(final_response)
-                final_answer = final_response.choices[0].message.content
+                final_answer = self._coerce_text(final_response.choices[0].message.content)
 
+            final_answer = self._coerce_text(final_answer)
             add_to_chat_history(user_id, "assistant", final_answer)
             extract_and_store_facts(user_id, query, final_answer)
 
@@ -231,7 +241,7 @@ class AIAgent:
         try:
             result = self.run_agent_react(user_id, username, query, conversation_history)
             if result["success"]:
-                answer = result["answer"]
+                answer = self._coerce_text(result.get("answer"))
                 yield {
                     "type": "metadata",
                     "tools_used": result["tools_used"],
